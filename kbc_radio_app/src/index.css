@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --kbc-blue: #002147;
+  --kbc-gold: #ffc107;
+  --kbc-red:  #ff0036;
+}
+
+.text-kbcBlue { color: var(--kbc-blue); }
+.bg-kbcBlue { background-color: var(--kbc-blue); }
+.text-kbcGold { color: var(--kbc-gold); }
+.bg-kbcGold { background-color: var(--kbc-gold); }
+.bg-kbcRed { background-color: var(--kbc-red); }
+
+/* optional: hide native scrollbar for horizontal lists */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

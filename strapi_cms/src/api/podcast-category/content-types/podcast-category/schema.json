@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "podcast_categories",
+  "info": {
+    "singularName": "podcast-category",
+    "pluralName": "podcast-categories",
+    "displayName": "Podcast Category"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name"
+    },
+    "description": {
+      "type": "text"
+    },
+    "thumbnail": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "podcast_episodes": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::podcast-episode.podcast-episode",
+      "mappedBy": "podcast_category"
+    }
+  }
+}
