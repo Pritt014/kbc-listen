@@ -6,6 +6,8 @@
   "scripts": {
     "build": "strapi build",
     "console": "strapi console",
+    "db:export": "strapi export --no-encrypt -f .tmp/strapi-export",
+    "db:import": "strapi import --no-encrypt --force -f .tmp/strapi-export.tar.gz",
     "deploy": "strapi deploy",
     "dev": "strapi develop",
     "develop": "strapi develop",
@@ -20,6 +22,7 @@
     "@strapi/strapi": "5.31.3",
     "better-sqlite3": "12.4.1",
     "esbuild": "^0.27.1",
+    "pg": "^8.20.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.2",
