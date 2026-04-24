@@ -1,21 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchCategories, fetchLatestEpisodes } from "../../api/podcasts";
+import { getBestImageUrl, unwrapEntity, unwrapRelation } from "../../api/strapi";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import ColorThief from "colorthief";
-
-/** Safely picks best poster URL */
-function getPosterUrl(poster) {
-  if (!poster) return null;
-  const formats = poster.formats || {};
-  return (
-    (formats.medium && formats.medium.url) ||
-    (formats.small && formats.small.url) ||
-    poster.url ||
-    null
-  );
-}
 
 /* Skeleton shimmer effect */
 const shimmer =
@@ -43,18 +32,13 @@ export default function Podcasts() {
 
         // Extract hero color from featured poster
         if (eps && eps.length > 0) {
-          const featured = eps[0];
-          const posterObj =
-            featured.poster?.data?.attributes ||
-            featured.poster?.attributes ||
-            featured.poster;
-
-          const poster = getPosterUrl(posterObj);
+          const featured = unwrapEntity(eps[0]);
+          const poster = getBestImageUrl(featured?.poster);
 
           if (poster) {
             const img = new Image();
             img.crossOrigin = "Anonymous";
-            img.src = "http://localhost:1337" + poster;
+            img.src = poster;
 
             img.onload = () => {
               try {
@@ -192,13 +176,8 @@ export default function Podcasts() {
   // REAL UI (unchanged from your refactor)
   // ----------------------------------------------------
   const featured = episodes[0];
-  const featuredPoster = featured
-    ? getPosterUrl(
-        featured.poster?.data?.attributes ||
-          featured.poster?.attributes ||
-          featured.poster
-      )
-    : null;
+  const featuredData = unwrapEntity(featured);
+  const featuredPoster = getBestImageUrl(featuredData?.poster);
 
   function scrollLeft() {
     const el = rowRef.current;
@@ -263,7 +242,7 @@ export default function Podcasts() {
                   </h2>
 
                   <p className="text-sm text-slate-300 mb-4">
-                    {featured.podcast_category?.name || ""}
+                    {unwrapRelation(featuredData?.podcast_category)?.name || ""}
                   </p>
 
                   <Link
@@ -280,7 +259,7 @@ export default function Podcasts() {
                 <div className="relative w-64 sm:w-72 md:w-80 aspect-square rounded-xl overflow-hidden shadow-2xl border border-white/20 bg-black/20 backdrop-blur-xl">
                   {featuredPoster ? (
                     <img
-                      src={`http://localhost:1337${featuredPoster}`}
+                      src={featuredPoster}
                       alt={featured.title}
                       className="w-full h-full object-cover drop-shadow-[0_20px_35px_rgba(0,0,0,0.45)]"
                     />
@@ -317,21 +296,20 @@ export default function Podcasts() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
             {categories.map((cat) => {
-              const thumb = cat.thumbnail?.url
-                ? `http://localhost:1337${cat.thumbnail.url}`
-                : null;
+              const catData = unwrapEntity(cat);
+              const thumb = getBestImageUrl(catData?.thumbnail);
 
               return (
                 <Link
                   key={cat.id}
-                  to={`/podcasts/category/${cat.slug}`}
+                  to={`/podcasts/category/${catData?.slug}`}
                   className="group rounded-xl bg-gray-900 overflow-hidden shadow hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
                 >
                   <div className="relative w-full aspect-square bg-gray-800 overflow-hidden">
                     {thumb ? (
                       <img
                         src={thumb}
-                        alt={cat.name}
+                        alt={catData?.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -343,10 +321,10 @@ export default function Podcasts() {
 
                   <div className="p-3">
                     <h3 className="font-semibold text-base group-hover:text-white transition">
-                      {cat.name}
+                      {catData?.name}
                     </h3>
                     <p className="text-xs text-gray-400 line-clamp-2">
-                      {cat.description}
+                      {catData?.description}
                     </p>
                   </div>
                 </Link>
@@ -402,12 +380,9 @@ export default function Podcasts() {
             >
               <div className="flex gap-4">
                 {episodes.map((ep) => {
-                  const poster = getPosterUrl(
-                    ep.poster?.data?.attributes ||
-                      ep.poster?.attributes ||
-                      ep.poster
-                  );
-                  const category = ep.podcast_category || null;
+                  const epData = unwrapEntity(ep);
+                  const poster = getBestImageUrl(epData?.poster);
+                  const category = unwrapRelation(epData?.podcast_category);
 
                   return (
                     <div
@@ -420,7 +395,7 @@ export default function Podcasts() {
                         <div className="relative w-full aspect-square bg-gray-200">
                           {poster ? (
                             <img
-                              src={`http://localhost:1337${poster}`}
+                              src={poster}
                               alt={ep.title}
                               className="w-full h-full object-cover"
                             />
@@ -440,7 +415,7 @@ export default function Podcasts() {
                         <div className="p-3 flex-1 flex flex-col justify-between">
                           <div>
                             <h3 className="font-semibold text-sm leading-tight mb-1 line-clamp-2">
-                              {ep.title}
+                              {epData?.title}
                             </h3>
 
                             <p className="text-xs text-gray-500 mb-1">
@@ -458,14 +433,14 @@ export default function Podcasts() {
 
                           <div className="flex items-center justify-between mt-3">
                             <Link
-                              to={`/podcasts/${ep.slug}`}
+                              to={`/podcasts/${epData?.slug}`}
                               className="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-black rounded-md text-sm font-semibold"
                             >
                               Play
                             </Link>
 
                             <Link
-                              to={`/podcasts/${ep.slug}`}
+                              to={`/podcasts/${epData?.slug}`}
                               className="px-2 py-1 text-xs text-pink-600 hover:underline"
                             >
                               Details

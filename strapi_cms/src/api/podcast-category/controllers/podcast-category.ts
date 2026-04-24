@@ -3,5 +3,36 @@
  */
 
 import { factories } from '@strapi/strapi';
+import { withDefaultPopulate } from '../../../utils/merge-populate';
 
-export default factories.createCoreController('api::podcast-category.podcast-category');
+const defaultPopulate = {
+  thumbnail: true,
+  podcast_episodes: {
+    populate: {
+      poster: true,
+      audio_file: true,
+      podcast_category: {
+        populate: {
+          thumbnail: true,
+        },
+      },
+    },
+  },
+};
+
+export default factories.createCoreController(
+  'api::podcast-category.podcast-category',
+  () => ({
+    async find(ctx) {
+      ctx.query = withDefaultPopulate(ctx.query, defaultPopulate);
+
+      return await super.find(ctx);
+    },
+
+    async findOne(ctx) {
+      ctx.query = withDefaultPopulate(ctx.query, defaultPopulate);
+
+      return await super.findOne(ctx);
+    },
+  })
+);

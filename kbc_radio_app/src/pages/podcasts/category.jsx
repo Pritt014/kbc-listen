@@ -3,15 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import {
+  API_URL,
+  getBestImageUrl,
+  unwrapEntity,
+} from "../../api/strapi";
 import ColorThief from "colorthief";
 
-const API_URL = "http://localhost:1337";
-
-/** Safely picks poster url */
 function getPosterUrl(poster) {
-  if (!poster) return null;
-  const f = poster.formats || {};
-  return f.medium?.url || f.small?.url || poster.url || null;
+  return getBestImageUrl(poster);
 }
 
 /** Extract text from Strapi rich text */
@@ -69,7 +69,7 @@ export default function PodcastCategoryPage() {
         setCategory(cat);
 
         const epRes = await fetch(
-          `${API_URL}/api/podcast-episodes?filters[podcast_category]=${cat.id}&populate=*`
+          `${API_URL}/api/podcast-episodes?filters[podcast_category][id][$eq]=${cat.id}&populate[poster]=true&populate[audio_file]=true&populate[podcast_category][populate][thumbnail]=true&sort[0]=release_date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc`
         );
         const epJson = await epRes.json();
 
@@ -86,18 +86,9 @@ export default function PodcastCategoryPage() {
   }, [categorySlug]);
 
   // Normalized category
-  const cat = category ? category.attributes || category : null;
-
-  const catPosterObj = cat
-    ? cat.thumbnail?.data?.attributes ||
-      cat.thumbnail?.attributes ||
-      cat.thumbnail ||
-      cat.poster?.data?.attributes ||
-      cat.poster?.attributes ||
-      cat.poster
-    : null;
-
-  const catPoster = getPosterUrl(catPosterObj);
+  const cat = unwrapEntity(category);
+  const catPoster =
+    getBestImageUrl(cat?.thumbnail) || getBestImageUrl(cat?.poster);
   const description = cat ? extractDescription(cat.description) : "";
 
   // Extract dominant color
@@ -105,7 +96,7 @@ export default function PodcastCategoryPage() {
     if (!catPoster) return;
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = `${API_URL}${catPoster}`;
+    img.src = catPoster;
 
     img.onload = () => {
       try {
@@ -222,7 +213,7 @@ export default function PodcastCategoryPage() {
               >
                 {catPoster ? (
                   <img
-                    src={`${API_URL}${catPoster}`}
+                    src={catPoster}
                     alt={cat.name}
                     className="w-full h-full object-cover"
                   />
@@ -276,7 +267,7 @@ export default function PodcastCategoryPage() {
                     <div className="relative aspect-square bg-gray-200 overflow-hidden">
                       {p ? (
                         <img
-                          src={`${API_URL}${p}`}
+                          src={p}
                           alt={epAttrs.title}
                           className="w-full h-full object-cover"
                         />

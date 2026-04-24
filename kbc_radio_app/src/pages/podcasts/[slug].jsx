@@ -2,30 +2,18 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import {
+  API_URL,
+  getBestImageUrl,
+  getMediaUrl,
+  unwrapEntity,
+  unwrapRelation,
+} from "../../api/strapi";
 import ColorThief from "colorthief";
-
-const API_URL = "http://localhost:1337";
-
-/** Safely picks best poster URL */
-function getPosterUrl(poster) {
-  if (!poster) return null;
-  const formats = poster.formats || {};
-  return (
-    (formats.medium && formats.medium.url) ||
-    (formats.small && formats.small.url) ||
-    poster.url ||
-    null
-  );
-}
 
 /** Safely extract category id */
 function getCategoryId(ep) {
-  return (
-    ep?.attributes?.podcast_category?.data?.id ||
-    ep?.podcast_category?.data?.id ||
-    ep?.podcast_category?.id ||
-    null
-  );
+  return unwrapRelation(unwrapEntity(ep)?.podcast_category)?.id || null;
 }
 
 /* PREMIUM shimmer utility */
@@ -79,10 +67,12 @@ export default function EpisodeDetail() {
 
         if (catId) {
           const relRes = await fetch(
-            `${API_URL}/api/podcast-episodes?filters[podcast_category]=${catId}` +
+            `${API_URL}/api/podcast-episodes?filters[podcast_category][id][$eq]=${catId}` +
               `&filters[slug][$ne]=${encoded}` +
-              `&populate=*` +
-              `&sort=createdAt:desc&pagination[pageSize]=200`
+              `&populate[poster]=true` +
+              `&populate[audio_file]=true` +
+              `&populate[podcast_category][populate][thumbnail]=true` +
+              `&sort[0]=release_date:desc&sort[1]=publishedAt:desc&sort[2]=createdAt:desc&pagination[pageSize]=200`
           );
 
           const relJson = await relRes.json();
@@ -105,31 +95,10 @@ export default function EpisodeDetail() {
   /** ----------------------------
    * SAFE NORMALIZATION
    * ---------------------------- */
-  const data = episode ? episode.attributes || episode : null;
-
-  const posterObj = data
-    ? data.poster?.data?.attributes || data.poster?.attributes || data.poster
-    : null;
-
-  const poster = getPosterUrl(posterObj);
-
-  const audioObj = data
-    ? data.audio_file?.data?.attributes ||
-      data.audio_file?.attributes ||
-      data.audio_file
-    : null;
-
-  const audioUrl = audioObj?.url
-    ? audioObj.url.startsWith("http")
-      ? audioObj.url
-      : `${API_URL}${audioObj.url}`
-    : null;
-
-  const category = data
-    ? data.podcast_category?.data?.attributes ||
-      data.podcast_category?.attributes ||
-      data.podcast_category
-    : null;
+  const data = unwrapEntity(episode);
+  const poster = getBestImageUrl(data?.poster);
+  const audioUrl = getMediaUrl(data?.audio_file);
+  const category = unwrapRelation(data?.podcast_category);
 
   // description preview
   let descriptionPreview = "";
@@ -161,7 +130,7 @@ export default function EpisodeDetail() {
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = `${API_URL}${poster}`;
+    img.src = poster;
 
     img.onload = () => {
       try {
@@ -315,7 +284,7 @@ export default function EpisodeDetail() {
             <div className="rounded-2xl overflow-hidden shadow-xl bg-white">
               {poster ? (
                 <img
-                  src={`${API_URL}${poster}`}
+                  src={poster}
                   alt={data.title}
                   className="w-full object-cover"
                 />
@@ -381,13 +350,8 @@ export default function EpisodeDetail() {
 
               <div className="overflow-x-auto flex gap-6 py-3 scrollbar-hide">
                 {relatedTop.map((ep) => {
-                  const epAttrs = ep.attributes || ep;
-                  const pObj =
-                    epAttrs.poster?.data?.attributes ||
-                    epAttrs.poster?.attributes ||
-                    epAttrs.poster;
-
-                  const p = getPosterUrl(pObj);
+                  const epAttrs = unwrapEntity(ep);
+                  const p = getBestImageUrl(epAttrs?.poster);
 
                   return (
                     <Link
@@ -399,7 +363,7 @@ export default function EpisodeDetail() {
                         <div className="aspect-square w-full bg-gray-200">
                           {p ? (
                             <img
-                              src={`${API_URL}${p}`}
+                              src={p}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -414,7 +378,7 @@ export default function EpisodeDetail() {
                             {epAttrs.title}
                           </h3>
                           <p className="text-xs text-gray-500">
-                            {epAttrs.podcast_category?.data?.attributes?.name}
+                            {unwrapRelation(epAttrs?.podcast_category)?.name}
                           </p>
                         </div>
                       </div>
@@ -433,13 +397,8 @@ export default function EpisodeDetail() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {relatedRest.map((ep) => {
-                const epAttrs = ep.attributes || ep;
-                const pObj =
-                  epAttrs.poster?.data?.attributes ||
-                  epAttrs.poster?.attributes ||
-                  epAttrs.poster;
-
-                const p = getPosterUrl(pObj);
+                const epAttrs = unwrapEntity(ep);
+                const p = getBestImageUrl(epAttrs?.poster);
 
                 return (
                   <Link
@@ -449,7 +408,7 @@ export default function EpisodeDetail() {
                   >
                     <div className="w-20 h-20 rounded-md overflow-hidden bg-gray-100">
                       {p ? (
-                        <img src={`${API_URL}${p}`} className="w-full h-full" />
+                        <img src={p} className="w-full h-full" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">
                           No
@@ -460,7 +419,7 @@ export default function EpisodeDetail() {
                     <div>
                       <h4 className="font-medium">{epAttrs.title}</h4>
                       <p className="text-xs text-gray-500">
-                        {epAttrs.podcast_category?.data?.attributes?.name}
+                        {unwrapRelation(epAttrs?.podcast_category)?.name}
                       </p>
                     </div>
                   </Link>

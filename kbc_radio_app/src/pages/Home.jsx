@@ -6,18 +6,8 @@ import Podcasts from "../components/Podcasts";
 import PodcastGrid from "../components/PodcastGrid";
 import Footer from "../components/Footer";
 import { fetchCategories, fetchLatestEpisodes } from "../api/podcasts";
+import { getBestImageUrl, unwrapEntity, unwrapRelation } from "../api/strapi";
 import { radioStations } from "../data/radioStations";
-
-function getPosterUrl(poster) {
-  if (!poster) return null;
-  const formats = poster.formats || {};
-  return (
-    (formats.medium && formats.medium.url) ||
-    (formats.small && formats.small.url) ||
-    poster.url ||
-    null
-  );
-}
 
 function formatEpisodeDate(value) {
   if (!value) return null;
@@ -50,18 +40,14 @@ export default function Home() {
 
         const normalizedCategories = (Array.isArray(categories) ? categories : [])
           .map((category) => {
-            const data = category.attributes || category;
-            const thumbObj =
-              data.thumbnail?.data?.attributes ||
-              data.thumbnail?.attributes ||
-              data.thumbnail;
-            const thumbUrl = getPosterUrl(thumbObj);
+            const data = unwrapEntity(category);
+            const thumbUrl = getBestImageUrl(data?.thumbnail);
 
             return {
               id: category.id,
-              title: data.name,
-              host: data.description || "Podcast category",
-              img: thumbUrl ? `http://localhost:1337${thumbUrl}` : "/assets/home-bg.jpg",
+              title: data?.name,
+              host: data?.description || "Podcast category",
+              img: thumbUrl || "/assets/home-bg.jpg",
               path: data.slug ? `/podcasts/category/${data.slug}` : "/podcasts",
             };
           })
@@ -70,24 +56,17 @@ export default function Home() {
 
         const normalizedEpisodes = (Array.isArray(episodes) ? episodes : [])
           .map((episode) => {
-            const data = episode.attributes || episode;
-            const posterObj =
-              data.poster?.data?.attributes ||
-              data.poster?.attributes ||
-              data.poster;
-            const categoryObj =
-              data.podcast_category?.data?.attributes ||
-              data.podcast_category?.attributes ||
-              data.podcast_category;
-            const posterUrl = getPosterUrl(posterObj);
+            const data = unwrapEntity(episode);
+            const posterUrl = getBestImageUrl(data?.poster);
+            const categoryObj = unwrapRelation(data?.podcast_category);
             const rawDate =
-              data.release_date || data.publishedAt || data.createdAt || null;
+              data?.release_date || data?.publishedAt || data?.createdAt || null;
 
             return {
               id: episode.id,
-              title: data.title,
+              title: data?.title,
               host: categoryObj?.name || "Podcast episode",
-              img: posterUrl ? `http://localhost:1337${posterUrl}` : "/assets/home-bg.jpg",
+              img: posterUrl || "/assets/home-bg.jpg",
               path: data.slug ? `/podcasts/${data.slug}` : "/podcasts",
               dateLabel: formatEpisodeDate(rawDate) || "Latest episode",
             };
