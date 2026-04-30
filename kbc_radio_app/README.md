@@ -1,16 +1,20 @@
-# React + Vite
+# KBC Radio App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite frontend for the KBC listening experience.
 
-Currently, two official plugins are available:
+## Environment
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The frontend reads Strapi from `VITE_API_URL`.
 
-## React Compiler
+For local development, `src/api/strapi.js` falls back to `http://localhost:1337`
+when `VITE_API_URL` is not set.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+For Netlify, set this environment variable before building:
 
-## Expanding the ESLint configuration
+```text
+VITE_API_URL=https://your-strapi-service.onrender.com
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Do not use `http://localhost:1337` in Netlify. Browser requests from the deployed
+site would try to reach the visitor's own computer instead of the Render Strapi
+service.

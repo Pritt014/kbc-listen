@@ -1,4 +1,12 @@
-const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:1337";
+const rawApiUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:1337" : "");
+
+if (!rawApiUrl) {
+  throw new Error(
+    "Missing VITE_API_URL. Set it to your deployed Strapi URL, for example https://your-strapi-service.onrender.com."
+  );
+}
 
 export const API_URL = rawApiUrl.replace(/\/+$/, "");
 
